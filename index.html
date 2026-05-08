@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Resume Builder</title>
+
+    <style>
+
+        body{
+            margin:0;
+            padding:0;
+            background:#f3f4f6;
+            font-family:Arial;
+        }
+
+        .container{
+            max-width:600px;
+            margin:50px auto;
+            background:white;
+            padding:30px;
+            border-radius:12px;
+            box-shadow:0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h1{
+            text-align:center;
+            color:#2563eb;
+        }
+
+        input, textarea{
+            width:100%;
+            padding:12px;
+            margin-top:10px;
+            margin-bottom:20px;
+            border:1px solid #ccc;
+            border-radius:8px;
+        }
+
+        button{
+            width:100%;
+            padding:14px;
+            border:none;
+            border-radius:8px;
+            background:#2563eb;
+            color:white;
+            cursor:pointer;
+            font-size:16px;
+        }
+
+        button:hover{
+            background:#1d4ed8;
+        }
+
+        #result{
+            margin-top:20px;
+            background:#f9fafb;
+            padding:15px;
+            border-radius:8px;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Smart Resume Builder</h1>
+
+    <h2>Login</h2>
+
+    <input
+        type="email"
+        id="email"
+        placeholder="Email"
+    >
+
+    <input
+        type="password"
+        id="password"
+        placeholder="Password"
+    >
+
+    <button onclick="loginUser()">
+        Login
+    </button>
+
+    <hr>
+
+    <h2>Create Resume</h2>
+
+    <input
+        type="text"
+        id="title"
+        placeholder="Resume Title"
+    >
+
+    <textarea
+        id="content"
+        placeholder="Resume Content"
+    ></textarea>
+
+    <button onclick="createResume()">
+        Create Resume
+    </button>
+
+    <div id="result"></div>
+
+</div>
+
+<script>
+
+const API_URL =
+"https://resume-builder-api-ubp8.onrender.com"
+
+async function loginUser(){
+
+    const response = await fetch(
+        API_URL + "/login",
+        {
+
+            method:"POST",
+
+            headers:{
+                "Content-Type":
+                "application/x-www-form-urlencoded"
+            },
+
+            body:new URLSearchParams({
+
+                username:
+                document.getElementById("email").value,
+
+                password:
+                document.getElementById("password").value
+            })
+        }
+    )
+
+    const data = await response.json()
+
+    console.log(data)
+
+    if(data.access_token){
+
+        localStorage.setItem(
+            "token",
+            data.access_token
+        )
+
+        alert("Login Success")
+
+    }else{
+
+        alert("Login Failed")
+    }
+}
+
+async function createResume(){
+
+    const token =
+    localStorage.getItem("token")
+
+    const response = await fetch(
+        API_URL + "/resume",
+        {
+
+            method:"POST",
+
+            headers:{
+                "Content-Type":"application/json",
+                "Authorization":"Bearer " + token
+            },
+
+            body:JSON.stringify({
+
+                title:
+                document.getElementById("title").value,
+
+                content:
+                document.getElementById("content").value
+            })
+        }
+    )
+
+    const data = await response.json()
+
+    document.getElementById("result").innerHTML =
+    JSON.stringify(data, null, 2)
+}
+
+</script>
+
+</body>
+</html>
