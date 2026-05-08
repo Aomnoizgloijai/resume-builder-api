@@ -11,7 +11,7 @@
             margin:0;
             padding:0;
             background:#f3f4f6;
-            font-family:Arial;
+            font-family:Arial, sans-serif;
         }
 
         .container{
@@ -26,6 +26,11 @@
         h1{
             text-align:center;
             color:#2563eb;
+            margin-bottom:30px;
+        }
+
+        h2{
+            margin-top:20px;
         }
 
         input, textarea{
@@ -35,6 +40,13 @@
             margin-bottom:20px;
             border:1px solid #ccc;
             border-radius:8px;
+            font-size:16px;
+            box-sizing:border-box;
+        }
+
+        textarea{
+            height:120px;
+            resize:none;
         }
 
         button{
@@ -44,8 +56,9 @@
             border-radius:8px;
             background:#2563eb;
             color:white;
-            cursor:pointer;
             font-size:16px;
+            cursor:pointer;
+            margin-bottom:15px;
         }
 
         button:hover{
@@ -57,6 +70,12 @@
             background:#f9fafb;
             padding:15px;
             border-radius:8px;
+            white-space:pre-wrap;
+            word-wrap:break-word;
+        }
+
+        hr{
+            margin:30px 0;
         }
 
     </style>
@@ -162,6 +181,12 @@ async function createResume(){
 
     const token =
     localStorage.getItem("token")
+
+    if(!token){
+
+        alert("Please login first")
+        return
+    }
 
     const response = await fetch(
         API_URL + "/resume",

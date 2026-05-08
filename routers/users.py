@@ -17,8 +17,9 @@ router = APIRouter()
 
 
 # =========================
-# Database Connection
+# DATABASE
 # =========================
+
 def get_db():
     db = SessionLocal()
     try:
@@ -28,54 +29,72 @@ def get_db():
 
 
 # =========================
-# Register
+# REGISTER
 # =========================
+
 @router.post("/register")
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
-    existing_user = db.query(models.User).filter(
-        models.User.email == user.email
+    existing_user = db.query(models.Users).filter(
+        models.Users.email == user.email
     ).first()
 
     if existing_user:
-        raise HTTPException(status_code=400, detail="Email already exists")
+        raise HTTPException(
+            status_code=400,
+            detail="Email already exists"
+        )
 
-    new_user = models.User(
+    hashed_pw = hash_password(user.password)
+
+    new_user = models.Users(
         username=user.username,
         email=user.email,
-        password=hash_password(user.password),
-        role=user.role
+        password=hashed_pw,
+        role="user"
     )
 
     db.add(new_user)
     db.commit()
+    db.refresh(new_user)
 
-    return {"message": "User created successfully"}
+    return {
+        "message": "User Registered Successfully"
+    }
 
 
 # =========================
-# Login
+# LOGIN
 # =========================
+
 @router.post("/login")
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
 
-    db_user = db.query(models.User).filter(
-        models.User.email == form_data.username
+    user = db.query(models.Users).filter(
+        models.Users.email == form_data.username
     ).first()
 
-    if not db_user:
-        raise HTTPException(status_code=401, detail="Invalid email")
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid Email"
+        )
 
-    if not verify_password(form_data.password, db_user.password):
-        raise HTTPException(status_code=401, detail="Invalid password")
+    if not verify_password(
+        form_data.password,
+        user.password
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid Password"
+        )
 
     access_token = create_access_token(
         data={
-            "sub": db_user.email,
-            "role": db_user.role
+            "sub": user.email
         }
     )
 
@@ -86,36 +105,44 @@ def login(
 
 
 # =========================
-# Create Resume
+# CREATE RESUME
 # =========================
+
 @router.post("/resume")
 def create_resume(
     resume: schemas.ResumeCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user=Depends(get_current_user)
 ):
 
     new_resume = models.Resume(
-        full_name=resume.full_name,
-        education=resume.education,
-        skills=resume.skills,
-        experience=resume.experience,
+        title=resume.title,
+        content=resume.content,
         owner_id=current_user.id
     )
 
     db.add(new_resume)
     db.commit()
+    db.refresh(new_resume)
 
-    return {"message": "Resume created successfully"}
+    return {
+        "message": "Resume Created",
+        "data": {
+            "id": new_resume.id,
+            "title": new_resume.title,
+            "content": new_resume.content
+        }
+    }
 
 
 # =========================
-# Get My Resume
+# GET ALL RESUMES
 # =========================
-@router.get("/my-resume")
-def get_my_resume(
+
+@router.get("/resume")
+def get_resumes(
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user=Depends(get_current_user)
 ):
 
     resumes = db.query(models.Resume).filter(
@@ -126,17 +153,21 @@ def get_my_resume(
 
 
 # =========================
-# Admin Only
+# ADMIN ONLY
 # =========================
+
 @router.get("/admin/users")
 def get_all_users(
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user=Depends(get_current_user)
 ):
 
     if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Access denied")
+        raise HTTPException(
+            status_code=403,
+            detail="Admin only"
+        )
 
-    users = db.query(models.User).all()
+    users = db.query(models.Users).all()
 
     return users
